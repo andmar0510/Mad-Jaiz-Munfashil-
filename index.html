@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Tajwid Interaktif - Mad Jaiz & Mad Shilah Thawilah</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Amiri (untuk teks Arab) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldCustom: '#0D9488',
+                        mintCustom: '#10B981',
+                        goldCustom: '#F59E0B',
+                        creamCustom: '#FFFBEB',
+                        cardBg: '#FFFFFF',
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        arabic: ['Amiri', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #047857 100%);
+            min-height: 100vh;
+        }
+
+        /* Pattern background khas islami ceria */
+        .bg-pattern {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px), radial-gradient(rgba(255, 255, 255, 0.1) 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+        }
+
+        /* Glassmorphism Card Style */
+        .canva-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+        }
+
+        /* Custom Bounce Animation for Ornaments */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+
+        .floating-element {
+            animation: floatSlow 4s ease-in-out infinite;
+        }
+
+        /* Transition Effects */
+        .option-btn {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(13, 148, 136, 0.2);
+        }
+
+        .option-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        /* Arabic Text styling */
+        .arabic-text {
+            font-family: 'Amiri', serif;
+            line-height: 2.2;
+            direction: rtl;
+        }
+
+        /* Custom Progress Bar */
+        .progress-bar-fill {
+            transition: width 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="font-sans bg-pattern text-slate-800 antialiased flex flex-col justify-between p-4 sm:p-6 md:p-8 min-h-screen">
+
+    <!-- HEADER / LOGO BAR -->
+    <header class="max-w-4xl mx-auto w-full flex justify-between items-center mb-4 text-white">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <div class="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-emerald-900 font-bold text-2xl shadow-lg transform -rotate-3">
+                <i class="fa-solid fa-book-quran"></i>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Kuis Tajwid Master</h1>
+                <p class="text-xs sm:text-sm text-emerald-100 font-medium">Mad Jaiz Munfashil & Mad Shilah Thawilah</p>
+            </div>
+        </div>
+        
+        <!-- Mute Sound Toggle -->
+        <button id="soundToggleBtn" onclick="toggleSound()" class="bg-white/20 hover:bg-white/30 backdrop-blur p-3 rounded-full text-white transition shadow-md flex items-center justify-center w-11 h-11" title="Aktif/Nonaktifkan Suara">
+            <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
+        </button>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-3xl mx-auto w-full flex-grow flex items-center justify-center relative">
+        
+        <!-- FLOATING DECORATIONS (Canva-like fun ornaments) -->
+        <div class="hidden md:block absolute -top-8 -left-12 text-amber-300 opacity-80 floating-element text-4xl">
+            <i class="fa-solid fa-star"></i>
+        </div>
+        <div class="hidden md:block absolute -bottom-6 -right-10 text-emerald-200 opacity-70 floating-element text-5xl" style="animation-delay: 2s;">
+            <i class="fa-solid fa-moon"></i>
+        </div>
+        <div class="hidden md:block absolute top-1/2 -right-16 text-yellow-300 opacity-60 floating-element text-3xl" style="animation-delay: 1s;">
+            <i class="fa-solid fa-sparkles"></i>
+        </div>
+
+        <!-- 1. START SCREEN -->
+        <div id="startScreen" class="canva-card w-full p-6 sm:p-10 text-center relative overflow-hidden">
+            <div class="inline-block p-4 bg-emerald-50 rounded-full mb-4 text-emerald-600 text-4xl shadow-inner">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-3">Uji Pemahaman Tajwid</h2>
+            <p class="text-slate-600 mb-6 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
+                Uji seberapa dalam pemahaman Anda mengenai hukum <strong class="text-emerald-700">Mad Jaiz Munfashil</strong> & <strong class="text-emerald-700">Mad Shilah Thawilah</strong> melalui 20 soal pilihan ganda.
+            </p>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8 max-w-md mx-auto text-left text-xs sm:text-sm text-amber-800">
+                <div class="font-bold mb-1 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-amber-500"></i> Ketentuan Kuis:
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-amber-900/80">
+                    <li>Niatkan belajar untuk menggapai ridho Allah SWT.</li>
+                    <li>Berdoa/Membaca Basmalah sebelum mulai.</li>
+                    <li>Tidak ada petunjuk/clue.</li>
+                    <li>Baca Hamdalah setelah selesai.</li>
+                </ul>
+            </div>
+
+            <button onclick="startQuiz()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-lg rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 transition duration-200 flex items-center justify-center gap-3 mx-auto">
+                <i class="fa-solid fa-play"></i> Mulai Kuis Sekarang
+            </button>
+        </div>
+
+        <!-- 2. QUIZ SCREEN -->
+        <div id="quizScreen" class="canva-card w-full p-5 sm:p-8 hidden relative">
+            
+            <!-- PROGRESS BAR & SCORE -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center text-xs sm:text-sm font-bold text-slate-600 mb-2">
+                    <span class="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-list-check"></i> Soal <span id="currentQuestionNum">1</span>/20
+                    </span>
+                    <span class="flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-trophy text-amber-500"></i> Skor: <span id="currentScore">0</span>
+                    </span>
+                </div>
+                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                    <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full progress-bar-fill w-0"></div>
+                </div>
+            </div>
+
+            <!-- QUESTION CONTAINER -->
+            <div class="mb-6 bg-slate-50 border border-slate-100 rounded-2xl p-5 sm:p-6 text-center relative">
+                <span id="questionTag" class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                    Tajwid Challenge
+                </span>
+                <p id="questionText" class="text-base sm:text-lg font-bold text-slate-800 mt-2 leading-relaxed">
+                    <!-- Soal dimasukkan melalui JS -->
+                </p>
+                <div id="arabicLafaz" class="arabic-text text-3xl sm:text-4xl font-bold text-emerald-800 my-3 hidden">
+                    <!-- Teks arab disisipkan di sini jika ada -->
+                </div>
+            </div>
+
+            <!-- OPTIONS (A, B, C, D) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6" id="optionsContainer">
+                <!-- Tombol opsi dimuat via JS -->
+            </div>
+
+            <!-- EXPLANATION CARD (MUNCUL SETELAH MENJAWAB) -->
+            <div id="explanationCard" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in">
+                <div class="flex items-center gap-2 text-emerald-800 font-bold mb-1 text-sm sm:text-base">
+                    <i id="explanationIcon" class="fa-solid fa-circle-check text-emerald-600"></i>
+                    <span id="explanationTitle">Penjelasan:</span>
+                </div>
+                <p id="explanationText" class="text-xs sm:text-sm text-emerald-950 leading-relaxed">
+                    <!-- Penjelasan dimasukkan via JS -->
+                </p>
+            </div>
+
+            <!-- FOOTER ACTION BUTTON -->
+            <div class="flex justify-end">
+                <button id="nextBtn" onclick="nextQuestion()" disabled class="px-6 py-3 bg-slate-300 text-slate-500 font-bold rounded-xl cursor-not-allowed transition flex items-center gap-2">
+                    Soal Selanjutnya <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. RESULT SCREEN -->
+        <div id="resultScreen" class="canva-card w-full p-6 sm:p-10 text-center hidden">
+            <div class="relative inline-block mb-4">
+                <div id="badgeBg" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl mx-auto shadow-xl">
+                    <i id="badgeIcon" class="fa-solid fa-award"></i>
+                </div>
+            </div>
+
+            <h2 id="resultGrade" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-1">Mumtaz!</h2>
+            <p id="resultSub" class="text-xs sm:text-sm font-semibold text-slate-500 mb-6">Pemahaman Anda Luar Biasa!</p>
+
+            <!-- SCORE BOARD -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 max-w-xs mx-auto flex justify-around items-center">
+                <div>
+                    <div class="text-xs text-slate-500 font-medium mb-1">Skor Akhir</div>
+                    <div id="finalScore" class="text-3xl sm:text-4xl font-black text-emerald-600">0</div>
+                </div>
+                <div class="h-10 w-px bg-slate-200"></div>
+                <div>
+                    <div class="text-xs text-slate-500 font-medium mb-1">Benar / Salah</div>
+                    <div class="text-base sm:text-lg font-bold text-slate-700">
+                        <span id="correctCount" class="text-emerald-600">0</span> / <span id="wrongCount" class="text-rose-500">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BINTANG EFEK -->
+            <div class="flex justify-center gap-2 text-3xl text-amber-400 mb-6" id="starRating">
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+            </div>
+
+            <p id="resultMessage" class="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mb-8 leading-relaxed">
+                <!-- Pesan hasil pemahaman -->
+            </p>
+
+            <button onclick="resetQuiz()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-base rounded-2xl shadow-lg hover:shadow-xl transition duration-200 flex items-center justify-center gap-2 mx-auto">
+                <i class="fa-solid fa-rotate-right"></i> Ulangi Kuis
+            </button>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="max-w-4xl mx-auto w-full text-center mt-6 text-xs text-emerald-100 opacity-100">
+        Media Pembelajaran Tajwid Interaktif &copy; 2026 - Mad Jaiz Munfashil & Mad Shilah Thawilah - Bunda Ammar
+    </footer>
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        // Data 20 Soal Tajwid Medium-Hard
+        const quizData = [
+            {
+                question: "Pada lafaz berikut, jenis hukum mad apakah yang terjadi pada kalimat di bawah?",
+                arabic: "بِمَا أُنْزِلَ",
+                options: [
+                    "Mad Wajib Muttashil",
+                    "Mad Jaiz Munfashil",
+                    "Mad Badal",
+                    "Mad Shilah Thawilah"
+                ],
+                correct: 1,
+                explanation: "Terjadi Mad Jaiz Munfashil karena Mad Thabi'i (Alif setelah Fathah pada بِمَا) bertemu dengan huruf Hamzah (أُ) di lain kata/terpisah."
+            },
+            {
+                question: "Perhatikan lafaz berikut. Hukum tajwid yang tepat pada sambungan kata tersebut adalah...",
+                arabic: "عِنْدَهُ إِلَّا",
+                options: [
+                    "Mad Shilah Qashirah",
+                    "Mad Jaiz Munfashil",
+                    "Mad Shilah Thawilah",
+                    "Mad Tamkin"
+                ],
+                correct: 2,
+                explanation: "Hukumnya Mad Shilah Thawilah (Shilah Qubro) karena Ha Dhamir (ـهُ) berharakat dammah terletak di antara dua huruf berharakat dan bertemu Hamzah (إِ) di kata berikutnya."
+            },
+            {
+                question: "Manakah syarat utama yang paling tepat sehingga suatu bacaan dikategorikan sebagai Mad Jaiz Munfashil?",
+                arabic: "",
+                options: [
+                    "Mad thabi'i bertemu hamzah dalam satu kata yang sama",
+                    "Mad thabi'i bertemu sukun asli karena waqaf",
+                    "Mad thabi'i bertemu hamzah di lain kata (terpisah)",
+                    "Ha dhamir bertemu huruf selain hamzah di lain kata"
+                ],
+                correct: 2,
+                explanation: "Kunci utama Mad Jaiz Munfashil adalah pertemuan huruf Mad Thabi'i dengan Hamzah secara tidak satu kata (Munfashil artinya terpisah)."
+            },
+            {
+                question: "Panjang bacaan standar untuk Mad Shilah Thawilah ketika dibaca washal menurut riwayat Hafsh 'an 'Ashim adalah...",
+                arabic: "",
+                options: [
+                    "2 harakat mutlak",
+                    "2, 4, atau 5 harakat",
+                    "6 harakat mutlak",
+                    "1 harakat saja"
+                ],
+                correct: 1,
+                explanation: "Dalam riwayat Hafsh 'an 'Ashim jalur Syathibiyyah, panjang Mad Shilah Thawilah disamakan dengan Mad Jaiz Munfashil yaitu 4 atau 5 harakat (atau 2 harakat pada jalur Thayyibah)."
+            },
+            {
+                question: "Di antara lafaz-lafaz berikut, manakah yang mengandung hukum Mad Shilah Thawilah?",
+                arabic: "مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ",
+                options: [
+                    "وَلَهُ مَا فِي السَّمَاوَاتِ",
+                    "مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ",
+                    "إِنَّهُ كَانَ تَوَّابًا",
+                    "فِي جِيدِهَا حَبْلٌ"
+                ],
+                correct: 1,
+                explanation: "Lafaz مِنْ عِلْمِهِ إِلَّا memuat Ha Dhamir (ـهِ) yang bertemu Hamzah (إِ). Sedangkan pilihan A & C adalah Mad Shilah Qashirah."
+            },
+            {
+                question: "Perbedaan mendasar antara Mad Wajib Muttashil dan Mad Jaiz Munfashil terletak pada...",
+                arabic: "",
+                options: [
+                    "Jenis huruf mad yang digunakan (Alif, Wau, Ya)",
+                    "Letak posisi hamzah (dalam satu kata vs terpisah kata)",
+                    "Panjang harakat yang tidak boleh sama sekali",
+                    "Keberadaan ha dhamir di awal kata"
+                ],
+                correct: 1,
+                explanation: "Muttashil artinya bersambung (mad dan hamzah dalam 1 kata), sedangkan Munfashil artinya terpisah (mad di akhir kata pertama, hamzah di awal kata kedua)."
+            },
+            {
+                question: "Perhatikan lafaz berikut. Hukum mad yang berlaku pada huruf Wau di akhir kata pertama adalah...",
+                arabic: "قَالُوا آمَنَّا",
+                options: [
+                    "Mad Wajib Muttashil",
+                    "Mad Jaiz Munfashil",
+                    "Mad Badal",
+                    "Mad 'Arid Lissukun"
+                ],
+                correct: 1,
+                explanation: "Lafaz قَالُوا diakhiri huruf mad Wau dan bertemu Hamzah (آ) di kata berikutnya آمَنَّا, sehingga dibaca Mad Jaiz Munfashil."
+            },
+            {
+                question: "Mengapa bacaan pada lafaz berikut dinamakan Mad Shilah Thawilah (Shilah Panjang)?",
+                arabic: "أَمْرُهُ إِلَى اللَّهِ",
+                options: [
+                    "Karena ha dhamir didahului oleh sukun",
+                    "Karena ha dhamir bertemu huruf hamzah pada kata berikutnya",
+                    "Karena dibaca panjang 6 harakat ketika waqaf",
+                    "Karena huruf hamzah terletak sebelum ha dhamir"
+                ],
+                correct: 1,
+                explanation: "Dinamakan Thawilah (panjang) karena Ha Dhamir bertemu Hamzah, sehingga kadar panjang bacaannya bertambah menjadi seperti Mad Jaiz Munfashil."
+            },
+            {
+                question: "Jika pembaca memilih WAQAF (berhenti) tepat pada kata pertama 'yā ayyuhā' (يَا), maka hukum mad pada kata 'يَا' berubah/dibaca sebagai...",
+                arabic: "يَا أَيُّهَا",
+                options: [
+                    "Tetap Mad Jaiz Munfashil (4-5 harakat)",
+                    "Mad Thabi'i (2 harakat)",
+                    "Mad 'Arid Lissukun",
+                    "Gugur dan tidak dibaca panjang"
+                ],
+                correct: 1,
+                explanation: "Ketika waqaf pada kata 'يَا', sebab hukum Mad Jaiz (yaitu hamzah di kata berikutnya) tidak lagi terhubung, sehingga kembali ke asal yaitu Mad Thabi'i (2 harakat)."
+            },
+            {
+                question: "Tentukan hukum tajwid pada bacaan berikut ini:",
+                arabic: "وَلَا أَنْتُمْ عَابِدُونَ",
+                options: [
+                    "Mad Jaiz Munfashil",
+                    "Mad Wajib Muttashil",
+                    "Mad Shilah Qashirah",
+                    "Mad Far'i Khash"
+                ],
+                correct: 0,
+                explanation: "Lafaz وَلَا (Mad Thabi'i Alif) bertemu dengan أَنْتُمْ (Hamzah di awal kata berikutnya) merupakan contoh klasik Mad Jaiz Munfashil."
+            },
+            {
+                question: "Pada potongan ayat berikut, huruf manakah yang secara langsung menjadi penyebab terjadinya Mad Shilah Thawilah?",
+                arabic: "وَوَاهَبْنَا لَهُ إِسْحَاقَ",
+                options: [
+                    "Huruf Wau di awal kata",
+                    "Ha dhamir (ـهُ) yang bertemu hamzah (إِ)",
+                    "Huruf Alif pada nama Is-haq",
+                    "Pantulan Qalqalah pada huruf Ba"
+                ],
+                correct: 1,
+                explanation: "Sebab terjadinya Mad Shilah Thawilah adalah Ha Dhamir pada لَهُ yang berharakat dammah bertemu dengan Hamzah di awal kata إِسْحَاقَ."
+            },
+            {
+                question: "Seorang qari membaca Mad Jaiz Munfashil sepanjang 2 harakat (Qashr). Berdasarkan disiplin ilmu qira'at, hal tersebut...",
+                arabic: "",
+                options: [
+                    "Diperbolehkan melalui jalur Thariq Thayyibatun Nasyr",
+                    "Haram dan merusak keabsahan bacaan",
+                    "Wajib diulang karena minimal harus 6 harakat",
+                    "Hanya berlaku khusus pada Mad Shilah Qashirah"
+                ],
+                correct: 0,
+                explanation: "Membaca Mad Jaiz Munfashil 2 harakat diperbolehkan menurut Thariq Thayyibatun Nasyr, meskipun jalur utama Syathibiyyah membaca 4 atau 5 harakat."
+            },
+            {
+                question: "Manakah di antara pilihan berikut yang BUKAN merupakan contoh dari Mad Jaiz Munfashil?",
+                arabic: "",
+                options: [
+                    "إِنَّا أَعْطَيْنَاكَ",
+                    "قُوا أَنْفُسَكُمْ",
+                    "جَاءَ أَمْرُنَا",
+                    "فِي أَيِّ صُورَةٍ"
+                ],
+                correct: 2,
+                explanation: "Lafaz جَاءَ merupakan Mad Wajib Muttashil karena huruf mad dan Hamzah berada dalam 1 kata yang sama."
+            },
+            {
+                question: "Apakah syarat utama agar suatu Ha Dhamir (ـهُ / ـهِ) dapat dibaca Mad Shilah (baik Qashirah maupun Thawilah)?",
+                arabic: "",
+                options: [
+                    "Berada di antara dua huruf yang sama-sama berharakat",
+                    "Didahului oleh huruf sukun dan diikuti huruf sukun",
+                    "Berada di akhir ayat dan dibaca waqaf",
+                    "Selalu diikuti oleh huruf berharakat tasydid"
+                ],
+                correct: 0,
+                explanation: "Ha Dhamir hanya dibaca Mad Shilah jika terletak di antara dua huruf berharakat (مَتَحَرِّكَيْنِ). Jika didahului atau diikuti sukun, tidak dibaca Mad Shilah."
+            },
+            {
+                question: "Mengapa pada lafaz berikut Ha Dhamir TIDAK dibaca Mad Shilah meskipun posisinya berada di antara dua huruf berharakat?",
+                arabic: "يَرْضَهُ لَكُمْ",
+                options: [
+                    "Karena Ha Dhamir dibaca sukun",
+                    "Pengecualian khusus (Istitsna') riwayat Hafsh yang dibaca pendek",
+                    "Karena diikuti huruf Lam",
+                    "Karena termasuk hukum Mad Jaiz Munfashil"
+                ],
+                correct: 1,
+                explanation: "Lafaz يَرْضَهُ لَكُمْ (QS. Az-Zumar: 7) merupakan pengecualian (istitsna') dalam riwayat Hafsh 'an 'Ashim, di mana Ha Dhamir dibaca pendek (1 harakat/tanpa shilah)."
+            },
+            {
+                question: "Perhatikan lafaz berikut. Terdapat dua hukum mad berturut-turut pada potongan ayat ini, yaitu...",
+                arabic: "فِي أَهْلِهِ إِلَّا",
+                options: [
+                    "Mad Thabi'i dan Mad Shilah Qashirah",
+                    "Mad Jaiz Munfashil dan Mad Shilah Thawilah",
+                    "Mad Wajib Muttashil dan Mad Jaiz Munfashil",
+                    "Mad Badal dan Mad Shilah Thawilah"
+                ],
+                correct: 1,
+                explanation: "Pertama, فِي أَهْلِهِ adalah Mad Jaiz Munfashil (Ya bertemu Hamzah). Kedua, أَهْلِهِ إِلَّا adalah Mad Shilah Thawilah (Ha dhamir bertemu Hamzah)."
+            },
+            {
+                question: "Bagaimanakah hukum membaca Mad Shilah Thawilah apabila pembaca berhenti (WAQAF) tepat pada Ha Dhamir?",
+                arabic: "",
+                options: [
+                    "Tetap dibaca panjang 4-5 harakat",
+                    "Dibaca panjang 2 harakat",
+                    "Mad gugur dan Ha Dhamir dibaca sukun (mati)",
+                    "Dibaca panjang 6 harakat"
+                ],
+                correct: 2,
+                explanation: "Ketika waqaf pada Ha Dhamir, maka Mad Shilah (baik Qashirah maupun Thawilah) menjadi gugur/hilang dan Ha Dhamir diubah menjadi sukun."
+            },
+            {
+                question: "Mengapa Mad Shilah Thawilah dikelompokkan sebagai cabang (furu') dari Mad Jaiz Munfashil?",
+                arabic: "",
+                options: [
+                    "Karena sama-sama menggunakan huruf Alif",
+                    "Karena Ha Dhamir yang bertemu Hamzah di lain kata menyerupai Mad Thabi'i bertemu Hamzah terpisah",
+                    "Karena keduanya wajib dibaca 6 harakat saat waqaf",
+                    "Karena keduanya hanya ditemukan pada awal surah"
+                ],
+                correct: 1,
+                explanation: "Mad Shilah Thawilah dihaluki hukumnya seperti Mad Jaiz Munfashil karena adanya Hamzah di kata terpisah setelah bacaan panjang (silah)."
+            },
+            {
+                question: "Lafaz berikut manakah yang mengandung contoh Mad Jaiz Munfashil pada huruf mad Ya (ي)?",
+                arabic: "فِي أَيَّامٍ",
+                options: [
+                    "فِي أَيَّامٍ",
+                    "يَا أَيُّهَا",
+                    "قَالُوا أَنْفُسَهُمْ",
+                    "الَّذِينَ آمَنُوا"
+                ],
+                correct: 0,
+                explanation: "Lafaz فِي أَيَّامٍ memuat huruf mad Ya (فِي) yang bertemu Hamzah (أَ) pada kata berikutnya."
+            },
+            {
+                question: "Pernyataan manakah yang PALING TEPAT mengenai perbedaan Mad Shilah Qashirah dan Mad Shilah Thawilah?",
+                arabic: "",
+                options: [
+                    "Qashirah bertemu hamzah, Thawilah bertemu selain hamzah",
+                    "Qashirah bertemu selain hamzah (2 harakat), Thawilah bertemu hamzah (4-5 harakat)",
+                    "Qashirah terjadi di awal kata, Thawilah di akhir kata",
+                    "Qashirah wajib waqaf, Thawilah wajib washal"
+                ],
+                correct: 1,
+                explanation: "Jika Ha Dhamir bertemu huruf selain Hamzah = Mad Shilah Qashirah (2 harakat). Jika bertemu Hamzah = Mad Shilah Thawilah (4-5 harakat)."
+            }
+        ];
+
+        // Global Game State
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctAnswersCount = 0;
+        let wrongAnswersCount = 0;
+        let isAnswered = false;
+        let soundEnabled = true;
+
+        // Web Audio API Synthesizer (Zero External File Audio)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Sound Effects Generator
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+
+            if (type === 'correct') {
+                // Jingle Gembira / Chime (C5, E5, G5, C6)
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.08);
+                    
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + index * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.08 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(audioCtx.currentTime + index * 0.08);
+                    osc.stop(audioCtx.currentTime + index * 0.08 + 0.3);
+                });
+            } else if (type === 'wrong') {
+                // Low Buzz / Error tone
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.3);
+
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-lg';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-lg';
+            }
+        }
+
+        // Start Quiz Function
+        function startQuiz() {
+            initAudio();
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswersCount = 0;
+            wrongAnswersCount = 0;
+            
+            loadQuestion();
+        }
+
+        // Load Single Question
+        function loadQuestion() {
+            isAnswered = false;
+            const q = quizData[currentQuestionIndex];
+
+            // Update UI Counters
+            document.getElementById('currentQuestionNum').innerText = currentQuestionIndex + 1;
+            document.getElementById('currentScore').innerText = score;
+            
+            // Update Progress Bar
+            const progressPercent = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+            // Set Question Text & Arabic
+            document.getElementById('questionText').innerText = q.question;
+            const arabicElem = document.getElementById('arabicLafaz');
+            if (q.arabic) {
+                arabicElem.innerText = q.arabic;
+                arabicElem.classList.remove('hidden');
+            } else {
+                arabicElem.classList.add('hidden');
+            }
+
+            // Hide Explanation Card & Disable Next Button
+            document.getElementById('explanationCard').classList.add('hidden');
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = true;
+            nextBtn.className = "px-6 py-3 bg-slate-200 text-slate-400 font-bold rounded-xl cursor-not-allowed transition flex items-center gap-2";
+
+            // Render Options
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `option-btn w-full p-4 rounded-xl border-2 border-slate-200 bg-white text-left font-semibold text-slate-700 text-xs sm:text-sm flex items-start gap-3 hover:border-emerald-400 hover:bg-emerald-50/50`;
+                btn.onclick = () => selectOption(idx);
+                btn.id = `option-${idx}`;
+
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 font-bold flex items-center justify-center shrink-0 border border-slate-200 text-xs">
+                        ${optionLabels[idx]}
+                    </span>
+                    <span class="mt-0.5 leading-snug">${opt}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // Select Option Logic
+        function selectOption(selectedIndex) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const q = quizData[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.correct;
+
+            // Audio Reaction
+            playSound(isCorrect ? 'correct' : 'wrong');
+
+            // Apply Styles to Options
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            q.options.forEach((_, idx) => {
+                const btn = document.getElementById(`option-${idx}`);
+                btn.disabled = true;
+
+                if (idx === q.correct) {
+                    // Correct Option Style
+                    btn.className = "option-btn w-full p-4 rounded-xl border-2 border-emerald-500 bg-emerald-100 text-emerald-900 font-bold text-xs sm:text-sm flex items-start gap-3 shadow-md";
+                    btn.children[0].className = "w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center shrink-0 text-xs";
+                } else if (idx === selectedIndex && !isCorrect) {
+                    // Wrong Selected Option Style
+                    btn.className = "option-btn w-full p-4 rounded-xl border-2 border-rose-500 bg-rose-100 text-rose-900 font-bold text-xs sm:text-sm flex items-start gap-3";
+                    btn.children[0].className = "w-7 h-7 rounded-lg bg-rose-600 text-white font-bold flex items-center justify-center shrink-0 text-xs";
+                } else {
+                    // Other Options Disabled
+                    btn.className = "option-btn w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-400 text-xs sm:text-sm flex items-start gap-3 opacity-60";
+                }
+            });
+
+            // Update Score & Counters
+            if (isCorrect) {
+                score += 5; // 20 soal x 5 = 100
+                correctAnswersCount++;
+                document.getElementById('currentScore').innerText = score;
+            } else {
+                wrongAnswersCount++;
+            }
+
+            // Show Explanation Card
+            const expCard = document.getElementById('explanationCard');
+            const expTitle = document.getElementById('explanationTitle');
+            const expIcon = document.getElementById('explanationIcon');
+            const expText = document.getElementById('explanationText');
+
+            if (isCorrect) {
+                expCard.className = "bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 mb-6 block";
+                expTitle.innerText = "Jawaban Tepat!";
+                expTitle.className = "text-emerald-800 font-bold";
+                expIcon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
+            } else {
+                expCard.className = "bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 mb-6 block";
+                expTitle.innerText = "Kurang Tepat!";
+                expTitle.className = "text-rose-800 font-bold";
+                expIcon.className = "fa-solid fa-circle-xmark text-rose-600 text-lg";
+            }
+
+            expText.innerText = q.explanation;
+
+            // Enable Next Button
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = false;
+            nextBtn.className = "px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition flex items-center gap-2 transform hover:-translate-y-0.5";
+        }
+
+        // Next Question or Finish
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // Show Final Result
+        function showResult() {
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('correctCount').innerText = correctAnswersCount;
+            document.getElementById('wrongCount').innerText = wrongAnswersCount;
+
+            const badgeBg = document.getElementById('badgeBg');
+            const badgeIcon = document.getElementById('badgeIcon');
+            const resultGrade = document.getElementById('resultGrade');
+            const resultSub = document.getElementById('resultSub');
+            const resultMessage = document.getElementById('resultMessage');
+            const starContainer = document.getElementById('starRating');
+
+            // Predikat Berdasarkan Skor
+            if (score >= 85) {
+                // Mumtaz (85-100)
+                badgeBg.className = "w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl mx-auto shadow-xl bg-gradient-to-tr from-amber-500 to-yellow-300";
+                badgeIcon.className = "fa-solid fa-crown";
+                resultGrade.innerText = "Mumtaz! (Istimewa)";
+                resultSub.innerText = "Pemahaman Tajwid Sangat Luar Biasa!";
+                resultMessage.innerText = "Selamat! Anda memiliki pemahaman yang sangat mendalam mengenai hukum Mad Jaiz Munfashil dan Mad Shilah Thawilah. Pertahankan hafalan dan pemahaman tajwid Anda!";
+                starContainer.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>`;
+
+                // Confetti animation for high score
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+            } else if (score >= 70) {
+                // Jayyid Jiddan (70-84)
+                badgeBg.className = "w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl mx-auto shadow-xl bg-gradient-to-tr from-emerald-500 to-teal-400";
+                badgeIcon.className = "fa-solid fa-award";
+                resultGrade.innerText = "Jayyid Jiddan! (Sangat Baik)";
+                resultSub.innerText = "Pemahaman Tajwid Sudah Bagus!";
+                resultMessage.innerText = "Hasil yang sangat baik! Anda memahami sebagian besar kaidah dan syarat Mad Jaiz & Mad Shilah Thawilah dengan tepat. Tingkatkan sedikit lagi latihan soal mengecoh!";
+                starContainer.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>`;
+
+            } else if (score >= 50) {
+                // Jayyid (50-69)
+                badgeBg.className = "w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl mx-auto shadow-xl bg-gradient-to-tr from-blue-500 to-indigo-400";
+                badgeIcon.className = "fa-solid fa-thumbs-up";
+                resultGrade.innerText = "Jayyid! (Cukup Baik)";
+                resultSub.innerText = "Pemahaman Dasar Cukup Baik";
+                resultMessage.innerText = "Anda sudah memahami konsep dasar mad. Namun, perhatikan detail kecil seperti letak hamzah terpisah, waqaf, dan riwayat khusus agar tidak terkecoh lagi.";
+                starContainer.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>`;
+
+            } else {
+                // Perlu Muroja'ah (<50)
+                badgeBg.className = "w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl mx-auto shadow-xl bg-gradient-to-tr from-rose-500 to-pink-500";
+                badgeIcon.className = "fa-solid fa-book-open-reader";
+                resultGrade.innerText = "Perlu Muroja'ah!";
+                resultSub.innerText = "Yuk, Pelajari Kembali Materinya!";
+                resultMessage.innerText = "Jangan berkecil hati! Soal-soal ini dirancang untuk kita terus belajar. Luangkan waktu untuk muroja'ah kembali bab Mad Jaiz Munfashil dan Mad Shilah Thawilah lalu coba kuis ini kembali!";
+                starContainer.innerHTML = `<i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>`;
+            }
+        }
+
+        // Reset Quiz
+        function resetQuiz() {
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
